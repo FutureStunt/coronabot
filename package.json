@@ -1,0 +1,17 @@
+{
+  "name": "coronabot",
+  "version": "0.0.1",
+  "description": "Discord.js bot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "discord.js": "^12.0.2",
+    "node-fetch": "^2.6.0"
+  },
+  "engines": {
+    "node": "12.x"
+  },
+  "license": "MIT"
+}
