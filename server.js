@@ -1,10 +1,10 @@
 const Discord = require("discord.js");
 const bot = new Discord.Client();
-const TOKEN = ""; //The bot token.
-const prefix = "="; //The bot prefix
-const invitelink = ""; //The bot invite link
 const fetch = require("node-fetch");
 
+var token = ""; //The bot token.
+var prefix = "="; //Bot Prefix
+var invitelink = ""; //The bot invite link
 
 bot.on("ready", async () => {
   console.log(
@@ -25,13 +25,25 @@ bot.on("message", async message => {
       `${message.author.tag} (${message.author.id}) has used the corona command.`
     );
     if (!args.length) {
-      fetch("https://corona.lmao.ninja/all")
+      fetch("https://corona.lmao.ninja/v2/all")
         .then(res => res.json())
         .then(json => GetActiveCases(message, json));
     } else {
-      fetch(`https://corona.lmao.ninja/countries/${args.join(" ")}`)
+      fetch(`https://corona.lmao.ninja/v2/countries/${args.join(" ")}`)
         .then(res => res.json())
         .then(json => {
+          if (json.cases == undefined)
+            return message.channel.send({
+              embed: {
+                color: 3447003,
+                author: {
+                  name: "COVID-19 - Invalid Country",
+                  icon_url:
+                    "https://toppng.com/uploads/preview/coronavirus-covid-19-11582576800djeiqpenmq.png"
+                },
+                description: `This country doesn't exist.`
+              }
+            });
           const exampleEmbed = new Discord.MessageEmbed()
             .setAuthor(
               "COVID-19 Stats",
@@ -95,7 +107,7 @@ bot.on("message", async message => {
         });
     }
   }
-  
+
   if (command === "invite") {
     message.channel.send({
       embed: {
@@ -120,10 +132,10 @@ bot.on("message", async message => {
             "https://toppng.com/uploads/preview/coronavirus-covid-19-11582576800djeiqpenmq.png"
         },
         fields: [
-            {
-              name: "/invite",
-              value: "Sends you the invitation link."
-            },
+          {
+            name: "/invite",
+            value: "Sends you the invitation link."
+          },
           {
             name: "/corona (country - optional)",
             value: "Shows you the corona stats of the world/of a country."
@@ -139,22 +151,14 @@ function getWholePercent(percentFor, percentOf) {
 }
 
 function GetActiveCases(message, j2) {
-  fetch("https://corona.lmao.ninja/countries")
+  fetch("https://corona.lmao.ninja/v2/countries")
     .then(res => res.json())
     .then(json => {
-      var active = 0;
-      var newCases = 0;
-      var newDeaths = 0;
-      for (var i = 0; i < json.length; i++) {
-        active += parseInt(json[i].active, 10);
-        newCases += parseInt(json[i].todayCases, 10);
-        newDeaths += parseInt(json[i].todayCases, 10);
-      }
-      SendCovidMessage(message, j2, active, newCases, newDeaths);
+      SendCovidMessage(message, j2);
     });
 }
 
-function SendCovidMessage(message, json2, activecases, newcases, newdeaths) {
+function SendCovidMessage(message, json2) {
   const exampleEmbed = new Discord.MessageEmbed()
     .setAuthor(
       "COVID-19 Stats",
@@ -165,7 +169,7 @@ function SendCovidMessage(message, json2, activecases, newcases, newdeaths) {
     .setTitle("World")
     .addFields(
       { name: "Total Cases", value: `${json2.cases} Cases`, inline: true },
-      { name: "New Cases", value: `${newcases} Cases`, inline: true },
+      { name: "New Cases", value: `${json2.todayCases} Cases`, inline: true },
       {
         name: "Total Deaths",
         value: `${json2.deaths} (${getWholePercent(
@@ -174,7 +178,11 @@ function SendCovidMessage(message, json2, activecases, newcases, newdeaths) {
         )}%) Deaths`,
         inline: true
       },
-      { name: "New Deaths", value: `${newdeaths} Deaths`, inline: true },
+      {
+        name: "New Deaths",
+        value: `${json2.todayDeaths} Deaths`,
+        inline: true
+      },
       {
         name: "Total Recovered",
         value: `${json2.recovered} (${getWholePercent(
@@ -183,7 +191,11 @@ function SendCovidMessage(message, json2, activecases, newcases, newdeaths) {
         )}%) Recovered`,
         inline: true
       },
-      { name: "Active Cases", value: `${activecases} Cases`, inline: true }
+      {
+        name: "Active Cases",
+        value: `${json2.cases - json2.deaths - json2.recovered} Cases`,
+        inline: true
+      }
     )
     .setTimestamp()
     .setFooter("-corona (country) to view the stats of a single country");
@@ -191,5 +203,4 @@ function SendCovidMessage(message, json2, activecases, newcases, newdeaths) {
   message.channel.send(exampleEmbed);
 }
 
-
-bot.login(TOKEN);
+bot.login(token);
